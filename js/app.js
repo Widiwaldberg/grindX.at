@@ -163,7 +163,7 @@ function showMatchPopup(profile) {
     <button id="popup-chat" style="margin-top:14px;background:linear-gradient(135deg,#ff6a88,#ff9a5a);color:#fff;border:none;padding:10px 24px;border-radius:20px;font-weight:700;cursor:pointer;">Chat öffnen</button>
     <button id="popup-close" style="background:none;border:none;color:#fff;margin-top:6px;cursor:pointer;text-decoration:underline;">Weiterswipen</button>
   `;
-  document.querySelector(".phone").appendChild(overlay);
+  document.querySelector(".site").appendChild(overlay);
   overlay.querySelector("#popup-close").onclick = () => overlay.remove();
   overlay.querySelector("#popup-chat").onclick = () => {
     overlay.remove();
