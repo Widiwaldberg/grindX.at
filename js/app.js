@@ -1,40 +1,183 @@
-// ---------- Data ----------
-const PROFILES = [
-  { id: 1, name: "Lisa", age: 18, emoji: "🏖️", gradient: "g1", distance: "3 Betten entfernt",
-    bio: "Sucht Partner fürs Bananaboat 🚤 – Party bis 4 Uhr garantiert. Wer hält mit?",
-    tags: ["Strand", "Party", "Volleyball"] },
-  { id: 2, name: "Jonas", age: 19, emoji: "🎉", gradient: "g2", distance: "Zimmer 214",
-    bio: "Bringt die Boxen mit. Wer plant die nächste Aftershowparty mit mir?",
-    tags: ["Musik", "Karten spielen"] },
-  { id: 3, name: "Mia", age: 18, emoji: "🍹", gradient: "g3", distance: "Am Pool",
-    bio: "Cocktail-Ranking-Challenge – wer testet mit mir alle Drinks der Bar durch?",
-    tags: ["Chillen", "Fotos", "Sonnenuntergang"] },
-  { id: 4, name: "Tom", age: 19, emoji: "🏄", gradient: "g4", distance: "Strandbar",
-    bio: "Erster Surfversuch am Mittwoch – Zuschauer und Lacher willkommen 😅",
-    tags: ["Sport", "Abenteuer"] },
-  { id: 5, name: "Nina", age: 18, emoji: "🌅", gradient: "g5", distance: "Rooftop",
-    bio: "Sonnenaufgang gucken statt schlafen gehen – wer ist verrückt genug?",
-    tags: ["Nachtschwärmer", "Musik"] },
-  { id: 6, name: "Ben", age: 19, emoji: "🎮", gradient: "g6", distance: "Lobby",
-    bio: "Pokerrunde am Abend? Ich bring die Chips, du das Glück.",
-    tags: ["Spiele", "Chillen"] }
-];
+// ---------- Helpers ----------
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  }[c]));
+}
 
+async function api(path, options = {}) {
+  const token = localStorage.getItem("mm_token");
+  const res = await fetch("/api" + path, {
+    method: options.method || "GET",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: "Bearer " + token } : {}),
+    },
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 401) {
+    logout();
+  }
+  if (!res.ok) throw new Error(data.error || "Etwas ist schiefgelaufen.");
+  return data;
+}
+
+function resizeImageToBase64(file, maxSize = 1024, quality = 0.8) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxSize || height > maxSize) {
+          const scale = maxSize / Math.max(width, height);
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", quality).split(",")[1]);
+      };
+      img.onerror = reject;
+      img.src = reader.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadPhoto(file) {
+  const dataBase64 = await resizeImageToBase64(file);
+  const safeName = file.name.replace(/[^a-zA-Z0-9.]/g, "_");
+  const { url } = await api("/upload", {
+    method: "POST",
+    body: { filename: safeName, contentType: "image/jpeg", dataBase64 },
+  });
+  return url;
+}
+
+// ---------- Auth state ----------
+let me = JSON.parse(localStorage.getItem("mm_me") || "null");
 const OPENERS = ["Heeey 👋", "Na, schon am Pool gesehen?", "Bananaboat morgen dabei?", "Freu mich aufs Matchen 🎉"];
 
-let queue = [...PROFILES];
+let queue = [];
 let matches = JSON.parse(localStorage.getItem("mm_matches") || "[]");
 let chats = JSON.parse(localStorage.getItem("mm_chats") || "{}");
 let activeChatId = null;
 
-// ---------- Screen navigation ----------
-function showScreen(name) {
-  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-  document.getElementById("screen-" + name).classList.add("active");
-  document.querySelectorAll("nav.bottom .item").forEach(b => b.classList.toggle("active", b.dataset.screen === name));
+const authView = document.getElementById("auth-view");
+const appView = document.getElementById("app-view");
+
+function showAuth() {
+  appView.hidden = true;
+  authView.hidden = false;
 }
 
-document.querySelectorAll("nav.bottom .item").forEach(btn => {
+async function showApp() {
+  authView.hidden = true;
+  appView.hidden = false;
+  renderProfile();
+  await loadProfiles();
+  renderMatches();
+}
+
+function onAuthSuccess(token, profile) {
+  localStorage.setItem("mm_token", token);
+  localStorage.setItem("mm_me", JSON.stringify(profile));
+  me = profile;
+  showApp();
+}
+
+function logout() {
+  localStorage.removeItem("mm_token");
+  localStorage.removeItem("mm_me");
+  me = null;
+  queue = [];
+  showAuth();
+}
+
+document.getElementById("btn-logout").addEventListener("click", logout);
+
+// ---------- Auth tabs ----------
+document.querySelectorAll(".auth-tab").forEach((tab) => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".auth-tab").forEach((t) => t.classList.toggle("active", t === tab));
+    document.getElementById("login-form").hidden = tab.dataset.tab !== "login";
+    document.getElementById("register-form").hidden = tab.dataset.tab !== "register";
+  });
+});
+
+// ---------- Photo preview (registration) ----------
+["1", "2", "3"].forEach((n) => {
+  const input = document.getElementById(`reg-photo-${n}`);
+  const preview = document.getElementById(`reg-photo-${n}-preview`);
+  input.addEventListener("change", () => {
+    const file = input.files[0];
+    if (!file) return;
+    preview.classList.add("has-image");
+    preview.style.backgroundImage = `url(${URL.createObjectURL(file)})`;
+    preview.textContent = "";
+  });
+});
+
+// ---------- Login ----------
+document.getElementById("login-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errEl = document.getElementById("login-error");
+  errEl.hidden = true;
+  try {
+    const name = document.getElementById("login-name").value.trim();
+    const password = document.getElementById("login-password").value;
+    const { token, profile } = await api("/login", { method: "POST", body: { name, password } });
+    onAuthSuccess(token, profile);
+  } catch (err) {
+    errEl.textContent = err.message;
+    errEl.hidden = false;
+  }
+});
+
+// ---------- Register ----------
+document.getElementById("register-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errEl = document.getElementById("register-error");
+  errEl.hidden = true;
+  const submitBtn = e.target.querySelector("button[type=submit]");
+  submitBtn.disabled = true;
+  try {
+    const files = ["1", "2", "3"].map((n) => document.getElementById(`reg-photo-${n}`).files[0]);
+    if (files.some((f) => !f)) throw new Error("Bitte alle drei Fotos auswählen.");
+    const [bild_vor_name, bild_nach_department, bild_nach_jahre] = await Promise.all(files.map(uploadPhoto));
+    const body = {
+      name: document.getElementById("reg-name").value.trim(),
+      alter: Number(document.getElementById("reg-alter").value),
+      department: document.getElementById("reg-department").value.trim(),
+      jahre_auf_xjam: Number(document.getElementById("reg-jahre").value),
+      password: document.getElementById("reg-password").value,
+      bild_vor_name,
+      bild_nach_department,
+      bild_nach_jahre,
+    };
+    const { token, profile } = await api("/register", { method: "POST", body });
+    onAuthSuccess(token, profile);
+  } catch (err) {
+    errEl.textContent = err.message;
+    errEl.hidden = false;
+  } finally {
+    submitBtn.disabled = false;
+  }
+});
+
+// ---------- Screen navigation ----------
+function showScreen(name) {
+  document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
+  document.getElementById("screen-" + name).classList.add("active");
+  document.querySelectorAll("nav.bottom .item").forEach((b) => b.classList.toggle("active", b.dataset.screen === name));
+}
+
+document.querySelectorAll("nav.bottom .item").forEach((btn) => {
   btn.addEventListener("click", () => showScreen(btn.dataset.screen));
 });
 
@@ -42,23 +185,48 @@ document.querySelectorAll("nav.bottom .item").forEach(btn => {
 const stackEl = document.getElementById("card-stack");
 const emptyEl = document.getElementById("empty-state");
 
+async function loadProfiles() {
+  try {
+    const { profiles } = await api("/profiles");
+    queue = profiles;
+  } catch {
+    queue = [];
+  }
+  renderStack();
+}
+
 function buildCard(profile, isTop) {
+  const photos = [profile.bild_vor_name, profile.bild_nach_department, profile.bild_nach_jahre];
   const card = document.createElement("div");
   card.className = "card";
   card.dataset.id = profile.id;
   card.innerHTML = `
-    <div class="img-block ${profile.gradient}">
-      ${profile.emoji}
-      <div class="distance">${profile.distance}</div>
+    <div class="img-block">
+      <div class="img-dots">${photos.map((_, i) => `<span class="${i === 0 ? "active" : ""}"></span>`).join("")}</div>
+      ${photos.map((src, i) => `<img src="${escapeHtml(src)}" class="${i === 0 ? "active" : ""}">`).join("")}
+      <div class="img-tap-zone left" data-dir="-1"></div>
+      <div class="img-tap-zone right" data-dir="1"></div>
       <div class="stamp like">LIKE</div>
       <div class="stamp nope">NOPE</div>
     </div>
     <div class="text-block">
-      <div class="name-age">${profile.name}, ${profile.age}</div>
-      <div class="bio">${profile.bio}</div>
-      <div class="tags">${profile.tags.map(t => `<span class="tag">${t}</span>`).join("")}</div>
+      <div class="name-age">${escapeHtml(profile.name)}, ${profile.alter}</div>
+      <div class="bio">${escapeHtml(profile.department)}</div>
+      <div class="tags"><span class="tag">${profile.jahre_auf_xjam} Jahre auf xjam</span></div>
     </div>
   `;
+
+  let photoIndex = 0;
+  const imgs = card.querySelectorAll(".img-block img");
+  const dots = card.querySelectorAll(".img-dots span");
+  card.querySelectorAll(".img-tap-zone").forEach((zone) => {
+    zone.addEventListener("click", () => {
+      photoIndex = (photoIndex + Number(zone.dataset.dir) + photos.length) % photos.length;
+      imgs.forEach((img, i) => img.classList.toggle("active", i === photoIndex));
+      dots.forEach((dot, i) => dot.classList.toggle("active", i === photoIndex));
+    });
+  });
+
   if (!isTop) {
     card.style.transform = "scale(0.95) translateY(10px)";
     card.style.zIndex = 1;
@@ -133,17 +301,19 @@ function swipeAway(card, profile, direction) {
   card.style.transform = `translate(${flyX}px, -40px) rotate(${direction === "right" ? 30 : -30}deg)`;
   card.style.opacity = "0";
   setTimeout(() => {
-    queue = queue.filter(p => p.id !== profile.id);
+    queue = queue.filter((p) => p.id !== profile.id);
+    const entscheidung = direction === "right" ? "like" : "dislike";
+    api("/swipe", { method: "POST", body: { swiped_id: profile.id, entscheidung } }).catch(() => {});
     if (direction === "right") handleLike(profile);
     renderStack();
   }, 320);
 }
 
 function handleLike(profile) {
-  const alreadyMatched = matches.find(m => m.id === profile.id);
+  const alreadyMatched = matches.find((m) => m.id === profile.id);
   if (alreadyMatched) return;
   // simulate: every liked profile matches (fun for a small friend-group app)
-  matches.push({ id: profile.id, name: profile.name, emoji: profile.emoji, gradient: profile.gradient });
+  matches.push({ id: profile.id, name: profile.name, photo: profile.bild_vor_name });
   localStorage.setItem("mm_matches", JSON.stringify(matches));
   if (!chats[profile.id]) {
     chats[profile.id] = [{ from: "them", text: OPENERS[Math.floor(Math.random() * OPENERS.length)] }];
@@ -158,8 +328,8 @@ function showMatchPopup(profile) {
   overlay.style.cssText = "position:absolute;inset:0;background:rgba(0,0,0,0.55);z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;gap:10px;";
   overlay.innerHTML = `
     <div style="font-size:38px;">🎉 It's a Match!</div>
-    <div style="font-size:60px;">${profile.emoji}</div>
-    <div style="font-size:16px;">Du und ${profile.name} habt gematcht</div>
+    <img src="${escapeHtml(profile.bild_vor_name)}" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid #fff;">
+    <div style="font-size:16px;">Du und ${escapeHtml(profile.name)} habt gematcht</div>
     <button id="popup-chat" style="margin-top:14px;background:linear-gradient(135deg,#ff6a88,#ff9a5a);color:#fff;border:none;padding:10px 24px;border-radius:20px;font-weight:700;cursor:pointer;">Chat öffnen</button>
     <button id="popup-close" style="background:none;border:none;color:#fff;margin-top:6px;cursor:pointer;text-decoration:underline;">Weiterswipen</button>
   `;
@@ -174,21 +344,21 @@ function showMatchPopup(profile) {
 document.getElementById("btn-like").addEventListener("click", () => {
   const top = stackEl.querySelector('.card[style*="z-index: 2"]') || stackEl.lastElementChild;
   if (top) {
-    const profile = queue.find(p => p.id == top.dataset.id);
+    const profile = queue.find((p) => p.id == top.dataset.id);
     if (profile) swipeAway(top, profile, "right");
   }
 });
 document.getElementById("btn-nope").addEventListener("click", () => {
   const top = stackEl.lastElementChild;
   if (top) {
-    const profile = queue.find(p => p.id == top.dataset.id);
+    const profile = queue.find((p) => p.id == top.dataset.id);
     if (profile) swipeAway(top, profile, "left");
   }
 });
 document.getElementById("btn-super").addEventListener("click", () => {
   const top = stackEl.lastElementChild;
   if (top) {
-    const profile = queue.find(p => p.id == top.dataset.id);
+    const profile = queue.find((p) => p.id == top.dataset.id);
     if (profile) swipeAway(top, profile, "right");
   }
 });
@@ -200,13 +370,13 @@ const matchesHint = document.getElementById("matches-hint");
 function renderMatches() {
   matchListEl.innerHTML = "";
   matchesHint.hidden = matches.length > 0;
-  matches.forEach(m => {
+  matches.forEach((m) => {
     const li = document.createElement("li");
     li.innerHTML = `
-      <div class="match-avatar ${m.gradient}">${m.emoji}</div>
+      <img class="match-avatar" src="${escapeHtml(m.photo)}">
       <div class="match-info">
-        <b>${m.name}</b>
-        <span>${(chats[m.id] || []).slice(-1)[0]?.text || "Sag Hallo!"}</span>
+        <b>${escapeHtml(m.name)}</b>
+        <span>${escapeHtml((chats[m.id] || []).slice(-1)[0]?.text || "Sag Hallo!")}</span>
       </div>
     `;
     li.addEventListener("click", () => openChat(m.id));
@@ -220,15 +390,15 @@ const chatNameEl = document.getElementById("chat-name");
 
 function openChat(id) {
   activeChatId = id;
-  const match = matches.find(m => m.id === id);
-  chatNameEl.textContent = match ? `${match.emoji} ${match.name}` : "Chat";
+  const match = matches.find((m) => m.id === id);
+  chatNameEl.textContent = match ? match.name : "Chat";
   renderChatMessages();
   showScreen("chat");
 }
 
 function renderChatMessages() {
   chatMessagesEl.innerHTML = "";
-  (chats[activeChatId] || []).forEach(msg => {
+  (chats[activeChatId] || []).forEach((msg) => {
     const b = document.createElement("div");
     b.className = "bubble " + (msg.from === "me" ? "me" : "them");
     b.textContent = msg.text;
@@ -253,22 +423,20 @@ document.getElementById("chat-form").addEventListener("submit", (e) => {
 });
 
 // ---------- Profile ----------
-const myName = document.getElementById("my-name");
-const myBio = document.getElementById("my-bio");
-const savedMsg = document.getElementById("saved-msg");
-
-const savedProfile = JSON.parse(localStorage.getItem("mm_profile") || "null");
-if (savedProfile) {
-  myName.value = savedProfile.name;
-  myBio.value = savedProfile.bio;
+function renderProfile() {
+  if (!me) return;
+  document.getElementById("profile-photo-1").src = me.bild_vor_name;
+  document.getElementById("profile-photo-2").src = me.bild_nach_department;
+  document.getElementById("profile-photo-3").src = me.bild_nach_jahre;
+  document.getElementById("profile-name").textContent = me.name;
+  document.getElementById("profile-alter").textContent = `${me.alter} Jahre`;
+  document.getElementById("profile-department").textContent = me.department;
+  document.getElementById("profile-jahre").textContent = `${me.jahre_auf_xjam} Jahre auf xjam`;
 }
 
-document.getElementById("save-profile").addEventListener("click", () => {
-  localStorage.setItem("mm_profile", JSON.stringify({ name: myName.value, bio: myBio.value }));
-  savedMsg.hidden = false;
-  setTimeout(() => savedMsg.hidden = true, 1800);
-});
-
 // ---------- Init ----------
-renderStack();
-renderMatches();
+if (localStorage.getItem("mm_token") && me) {
+  showApp();
+} else {
+  showAuth();
+}

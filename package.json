@@ -1,0 +1,15 @@
+{
+  "name": "grindx-at",
+  "version": "1.0.0",
+  "private": true,
+  "description": "grindX.at – Dating-App mit Vercel Postgres + Vercel Blob Backend",
+  "engines": {
+    "node": "20.x"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.10.4",
+    "@vercel/blob": "^2.5.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2"
+  }
+}

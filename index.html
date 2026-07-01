@@ -3,85 +3,142 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MaturaMatch</title>
+<title>grindX.at</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
 <div class="site">
-  <header class="app">
-    <div class="logo">MaturaMatch 🎓❤️</div>
-    <div class="icons">🔔 ⚙️</div>
-  </header>
 
-  <main class="screens">
+  <!-- Auth Screen -->
+  <div id="auth-view" class="auth-view">
+    <div class="auth-card">
+      <div class="logo">grindX.at 🎓❤️</div>
 
-    <!-- Discover Screen -->
-    <section id="screen-discover" class="screen active">
-      <div class="stack" id="card-stack"></div>
-      <div class="empty-state" id="empty-state" hidden>
-        <p>🎉 Keine weiteren Profile</p>
-        <span>Schau später nochmal vorbei!</span>
+      <div class="auth-tabs">
+        <button type="button" class="auth-tab active" data-tab="login">Login</button>
+        <button type="button" class="auth-tab" data-tab="register">Registrieren</button>
       </div>
-      <div class="actions">
-        <button class="btn-nope" id="btn-nope">✕</button>
-        <button class="btn-super" id="btn-super">★</button>
-        <button class="btn-like" id="btn-like">♥</button>
-      </div>
-    </section>
 
-    <!-- Matches Screen -->
-    <section id="screen-matches" class="screen">
-      <h2 class="screen-title">Deine Matches</h2>
-      <ul class="match-list" id="match-list"></ul>
-      <p class="hint" id="matches-hint">Noch keine Matches – lauf zurück zu "Entdecken" und lik ein paar Leute!</p>
-    </section>
-
-    <!-- Chat Screen -->
-    <section id="screen-chat" class="screen">
-      <div class="chat-header">
-        <button id="chat-back" class="chat-back">←</button>
-        <span id="chat-name">Chat</span>
-      </div>
-      <div class="chat-messages" id="chat-messages"></div>
-      <form class="chat-input" id="chat-form">
-        <input type="text" id="chat-text" placeholder="Nachricht..." autocomplete="off">
-        <button type="submit">➤</button>
+      <form id="login-form" class="auth-form">
+        <input type="text" id="login-name" placeholder="Name" autocomplete="username" required>
+        <input type="password" id="login-password" placeholder="Passwort" autocomplete="current-password" required>
+        <button type="submit" class="save-btn">Einloggen</button>
+        <p class="auth-error" id="login-error" hidden></p>
       </form>
-    </section>
 
-    <!-- Programm Screen -->
-    <section id="screen-programm" class="screen">
-      <h2 class="screen-title">Programm</h2>
-      <ul class="programm-list">
-        <li><span class="day">Mo</span><div><b>Anreise & Welcome-Party</b><br>Check-in ab 14 Uhr, Kickoff am Pool</div></li>
-        <li><span class="day">Di</span><div><b>Strandtag</b><br>Volleyball-Turnier, Bananaboat</div></li>
-        <li><span class="day">Mi</span><div><b>Ausflugstag</b><br>Bootstour, Schnorcheln</div></li>
-        <li><span class="day">Do</span><div><b>Freizeit & Pool</b><br>Cocktail-Workshop am Nachmittag</div></li>
-        <li><span class="day">Fr</span><div><b>Abschlussparty</b><br>Rooftop, DJ bis Sonnenaufgang</div></li>
-      </ul>
-    </section>
+      <form id="register-form" class="auth-form" hidden>
+        <label class="photo-upload">
+          <input type="file" accept="image/*" id="reg-photo-1" hidden required>
+          <span class="photo-preview" id="reg-photo-1-preview">📷 Foto hinzufügen</span>
+        </label>
 
-    <!-- Profile Screen -->
-    <section id="screen-profile" class="screen">
-      <h2 class="screen-title">Mein Profil</h2>
-      <div class="my-profile">
-        <div class="my-avatar">🧑</div>
-        <input type="text" id="my-name" placeholder="Dein Name" value="Du">
-        <textarea id="my-bio" placeholder="Kurze Bio...">Bereit für die beste Woche des Jahres 🌴</textarea>
-        <button id="save-profile" class="save-btn">Speichern</button>
-        <span class="saved-msg" id="saved-msg" hidden>Gespeichert ✓</span>
-      </div>
-    </section>
+        <input type="text" id="reg-name" placeholder="Name" autocomplete="username" required>
+        <input type="number" id="reg-alter" placeholder="Alter" min="14" max="100" required>
+        <input type="text" id="reg-department" placeholder="Department" required>
 
-  </main>
+        <label class="photo-upload">
+          <input type="file" accept="image/*" id="reg-photo-2" hidden required>
+          <span class="photo-preview" id="reg-photo-2-preview">📷 Foto hinzufügen</span>
+        </label>
 
-  <nav class="bottom">
-    <button class="item active" data-screen="discover"><span class="ic">🔥</span>Entdecken</button>
-    <button class="item" data-screen="matches"><span class="ic">💬</span>Matches</button>
-    <button class="item" data-screen="programm"><span class="ic">📅</span>Programm</button>
-    <button class="item" data-screen="profile"><span class="ic">👤</span>Profil</button>
-  </nav>
+        <input type="number" id="reg-jahre" placeholder="Jahre auf xjam" min="0" max="100" required>
+
+        <label class="photo-upload">
+          <input type="file" accept="image/*" id="reg-photo-3" hidden required>
+          <span class="photo-preview" id="reg-photo-3-preview">📷 Foto hinzufügen</span>
+        </label>
+
+        <input type="password" id="reg-password" placeholder="Passwort (mind. 6 Zeichen)" autocomplete="new-password" minlength="6" required>
+        <button type="submit" class="save-btn">Registrieren</button>
+        <p class="auth-error" id="register-error" hidden></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- App -->
+  <div id="app-view" hidden>
+    <header class="app">
+      <div class="logo">grindX.at 🎓❤️</div>
+      <div class="icons">🔔 ⚙️</div>
+    </header>
+
+    <main class="screens">
+
+      <!-- Discover Screen -->
+      <section id="screen-discover" class="screen active">
+        <div class="stack" id="card-stack"></div>
+        <div class="empty-state" id="empty-state" hidden>
+          <p>🎉 Keine weiteren Profile</p>
+          <span>Schau später nochmal vorbei!</span>
+        </div>
+        <div class="actions">
+          <button class="btn-nope" id="btn-nope">✕</button>
+          <button class="btn-super" id="btn-super">★</button>
+          <button class="btn-like" id="btn-like">♥</button>
+        </div>
+      </section>
+
+      <!-- Matches Screen -->
+      <section id="screen-matches" class="screen">
+        <h2 class="screen-title">Deine Matches</h2>
+        <ul class="match-list" id="match-list"></ul>
+        <p class="hint" id="matches-hint">Noch keine Matches – lauf zurück zu "Entdecken" und lik ein paar Leute!</p>
+      </section>
+
+      <!-- Chat Screen -->
+      <section id="screen-chat" class="screen">
+        <div class="chat-header">
+          <button id="chat-back" class="chat-back">←</button>
+          <span id="chat-name">Chat</span>
+        </div>
+        <div class="chat-messages" id="chat-messages"></div>
+        <form class="chat-input" id="chat-form">
+          <input type="text" id="chat-text" placeholder="Nachricht..." autocomplete="off">
+          <button type="submit">➤</button>
+        </form>
+      </section>
+
+      <!-- Programm Screen -->
+      <section id="screen-programm" class="screen">
+        <h2 class="screen-title">Programm</h2>
+        <ul class="programm-list">
+          <li><span class="day">Mo</span><div><b>Anreise & Welcome-Party</b><br>Check-in ab 14 Uhr, Kickoff am Pool</div></li>
+          <li><span class="day">Di</span><div><b>Strandtag</b><br>Volleyball-Turnier, Bananaboat</div></li>
+          <li><span class="day">Mi</span><div><b>Ausflugstag</b><br>Bootstour, Schnorcheln</div></li>
+          <li><span class="day">Do</span><div><b>Freizeit & Pool</b><br>Cocktail-Workshop am Nachmittag</div></li>
+          <li><span class="day">Fr</span><div><b>Abschlussparty</b><br>Rooftop, DJ bis Sonnenaufgang</div></li>
+        </ul>
+      </section>
+
+      <!-- Profile Screen -->
+      <section id="screen-profile" class="screen">
+        <h2 class="screen-title">Mein Profil</h2>
+        <div class="my-profile">
+          <div class="my-photos">
+            <img id="profile-photo-1" class="my-photo" alt="Foto 1">
+            <img id="profile-photo-2" class="my-photo" alt="Foto 2">
+            <img id="profile-photo-3" class="my-photo" alt="Foto 3">
+          </div>
+          <div class="my-info">
+            <b id="profile-name"></b>
+            <span id="profile-alter"></span>
+            <span id="profile-department"></span>
+            <span id="profile-jahre"></span>
+          </div>
+          <button id="btn-logout" class="save-btn logout-btn">Logout</button>
+        </div>
+      </section>
+
+    </main>
+
+    <nav class="bottom">
+      <button class="item active" data-screen="discover"><span class="ic">🔥</span>Entdecken</button>
+      <button class="item" data-screen="matches"><span class="ic">💬</span>Matches</button>
+      <button class="item" data-screen="programm"><span class="ic">📅</span>Programm</button>
+      <button class="item" data-screen="profile"><span class="ic">👤</span>Profil</button>
+    </nav>
+  </div>
 </div>
 
 <script src="js/app.js"></script>
