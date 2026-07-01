@@ -39,6 +39,7 @@ header.app {
   flex-shrink: 0;
   border-bottom: 1px solid #f0f0f0;
 }
+header.app .brand { display: flex; flex-direction: column; gap: 1px; }
 header.app .logo {
   font-size: 20px;
   font-weight: 800;
@@ -47,6 +48,7 @@ header.app .logo {
   background-clip: text;
   color: transparent;
 }
+header.app .subtitle { font-size: 10.5px; color: #999; font-weight: 600; letter-spacing: 0.2px; }
 header.app .icons { display: flex; gap: 14px; font-size: 18px; }
 
 .screens {
@@ -83,6 +85,13 @@ header.app .icons { display: flex; gap: 14px; font-size: 18px; }
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+.auth-card .subtitle {
+  text-align: center;
+  font-size: 12px;
+  color: #999;
+  font-weight: 600;
+  letter-spacing: 0.3px;
   margin-bottom: 4px;
 }
 
