@@ -347,30 +347,6 @@ header.app .icons { display: flex; gap: 14px; font-size: 18px; }
   cursor: pointer;
 }
 
-/* ---- Programm ---- */
-.programm-list { list-style: none; padding: 6px 18px; }
-.programm-list li {
-  display: flex;
-  gap: 14px;
-  padding: 12px 0;
-  border-bottom: 1px solid #f2f2f5;
-  font-size: 13px;
-  color: #555;
-}
-.programm-list .day {
-  width: 34px; height: 34px;
-  background: #fff0f2;
-  color: #ff6a88;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 12px;
-  flex-shrink: 0;
-}
-.programm-list b { font-size: 13.5px; color: #222; }
-
 /* ---- Profile ---- */
 .my-profile { padding: 10px 20px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
 .my-photos { display: flex; gap: 8px; }
