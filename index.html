@@ -91,12 +91,34 @@
         <div class="chat-header">
           <button id="chat-back" class="chat-back">←</button>
           <span id="chat-name">Chat</span>
+          <button id="chat-view-profile" class="chat-view-profile" title="Profil ansehen">👤</button>
         </div>
         <div class="chat-messages" id="chat-messages"></div>
         <form class="chat-input" id="chat-form">
           <input type="text" id="chat-text" placeholder="Nachricht..." autocomplete="off">
           <button type="submit">➤</button>
         </form>
+      </section>
+
+      <!-- Partner Profile Screen -->
+      <section id="screen-partner-profile" class="screen">
+        <div class="chat-header">
+          <button id="partner-profile-back" class="chat-back">←</button>
+          <span id="partner-profile-name">Profil</span>
+        </div>
+        <div class="my-profile">
+          <div class="my-photos">
+            <img id="partner-photo-1" class="my-photo" alt="Foto 1">
+            <img id="partner-photo-2" class="my-photo" alt="Foto 2">
+            <img id="partner-photo-3" class="my-photo" alt="Foto 3">
+          </div>
+          <div class="my-info">
+            <b id="partner-name"></b>
+            <span id="partner-alter"></span>
+            <span id="partner-department"></span>
+            <span id="partner-jahre"></span>
+          </div>
+        </div>
       </section>
 
       <!-- Programm Screen -->

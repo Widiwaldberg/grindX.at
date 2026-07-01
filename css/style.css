@@ -288,6 +288,7 @@ header.app .icons { display: flex; gap: 14px; font-size: 18px; }
   font-size: 15px;
 }
 .chat-back { background: none; border: none; font-size: 20px; cursor: pointer; }
+.chat-view-profile { margin-left: auto; background: none; border: none; font-size: 18px; cursor: pointer; }
 .chat-messages {
   padding: 14px;
   display: flex;

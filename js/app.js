@@ -64,7 +64,7 @@ let me = JSON.parse(localStorage.getItem("mm_me") || "null");
 const OPENERS = ["Heeey 👋", "Na, schon am Pool gesehen?", "Bananaboat morgen dabei?", "Freu mich aufs Matchen 🎉"];
 
 let queue = [];
-let matches = JSON.parse(localStorage.getItem("mm_matches") || "[]");
+let matches = [];
 let chats = JSON.parse(localStorage.getItem("mm_chats") || "{}");
 let activeChatId = null;
 
@@ -81,7 +81,7 @@ async function showApp() {
   appView.hidden = false;
   renderProfile();
   await loadProfiles();
-  renderMatches();
+  await loadMatches();
 }
 
 function onAuthSuccess(token, profile) {
@@ -300,27 +300,27 @@ function swipeAway(card, profile, direction) {
   card.style.transition = "transform 0.4s ease, opacity 0.4s ease";
   card.style.transform = `translate(${flyX}px, -40px) rotate(${direction === "right" ? 30 : -30}deg)`;
   card.style.opacity = "0";
-  setTimeout(() => {
+  setTimeout(async () => {
     queue = queue.filter((p) => p.id !== profile.id);
     const entscheidung = direction === "right" ? "like" : "dislike";
-    api("/swipe", { method: "POST", body: { swiped_id: profile.id, entscheidung } }).catch(() => {});
-    if (direction === "right") handleLike(profile);
+    try {
+      const result = await api("/swipe", { method: "POST", body: { swiped_id: profile.id, entscheidung } });
+      if (result.matched) handleMatch(result.profile);
+    } catch {}
     renderStack();
   }, 320);
 }
 
-function handleLike(profile) {
-  const alreadyMatched = matches.find((m) => m.id === profile.id);
-  if (alreadyMatched) return;
-  // simulate: every liked profile matches (fun for a small friend-group app)
-  matches.push({ id: profile.id, name: profile.name, photo: profile.bild_vor_name });
-  localStorage.setItem("mm_matches", JSON.stringify(matches));
-  if (!chats[profile.id]) {
-    chats[profile.id] = [{ from: "them", text: OPENERS[Math.floor(Math.random() * OPENERS.length)] }];
+function handleMatch(matchProfile) {
+  if (!matches.find((m) => m.id === matchProfile.id)) {
+    matches.push(matchProfile);
+  }
+  if (!chats[matchProfile.id]) {
+    chats[matchProfile.id] = [{ from: "them", text: OPENERS[Math.floor(Math.random() * OPENERS.length)] }];
     localStorage.setItem("mm_chats", JSON.stringify(chats));
   }
   renderMatches();
-  showMatchPopup(profile);
+  showMatchPopup(matchProfile);
 }
 
 function showMatchPopup(profile) {
@@ -367,13 +367,23 @@ document.getElementById("btn-super").addEventListener("click", () => {
 const matchListEl = document.getElementById("match-list");
 const matchesHint = document.getElementById("matches-hint");
 
+async function loadMatches() {
+  try {
+    const { matches: serverMatches } = await api("/matches");
+    matches = serverMatches;
+  } catch {
+    matches = [];
+  }
+  renderMatches();
+}
+
 function renderMatches() {
   matchListEl.innerHTML = "";
   matchesHint.hidden = matches.length > 0;
   matches.forEach((m) => {
     const li = document.createElement("li");
     li.innerHTML = `
-      <img class="match-avatar" src="${escapeHtml(m.photo)}">
+      <img class="match-avatar" src="${escapeHtml(m.bild_vor_name)}">
       <div class="match-info">
         <b>${escapeHtml(m.name)}</b>
         <span>${escapeHtml((chats[m.id] || []).slice(-1)[0]?.text || "Sag Hallo!")}</span>
@@ -408,6 +418,25 @@ function renderChatMessages() {
 }
 
 document.getElementById("chat-back").addEventListener("click", () => showScreen("matches"));
+
+function openPartnerProfile(match) {
+  document.getElementById("partner-profile-name").textContent = match.name;
+  document.getElementById("partner-photo-1").src = match.bild_vor_name;
+  document.getElementById("partner-photo-2").src = match.bild_nach_department;
+  document.getElementById("partner-photo-3").src = match.bild_nach_jahre;
+  document.getElementById("partner-name").textContent = match.name;
+  document.getElementById("partner-alter").textContent = `${match.alter} Jahre`;
+  document.getElementById("partner-department").textContent = match.department;
+  document.getElementById("partner-jahre").textContent = `${match.jahre_auf_xjam} Jahre auf xjam`;
+  showScreen("partner-profile");
+}
+
+document.getElementById("chat-view-profile").addEventListener("click", () => {
+  const match = matches.find((m) => m.id === activeChatId);
+  if (match) openPartnerProfile(match);
+});
+
+document.getElementById("partner-profile-back").addEventListener("click", () => showScreen("chat"));
 
 document.getElementById("chat-form").addEventListener("submit", (e) => {
   e.preventDefault();
