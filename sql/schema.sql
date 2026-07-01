@@ -19,3 +19,11 @@ CREATE TABLE IF NOT EXISTS swipes (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (swiper_id, swiped_id)
 );
+
+CREATE TABLE IF NOT EXISTS messages (
+  id SERIAL PRIMARY KEY,
+  sender_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  recipient_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  text TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);

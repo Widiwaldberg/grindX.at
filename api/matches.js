@@ -10,7 +10,12 @@ module.exports = async (req, res) => {
   try {
     const me = requireAuth(req);
     const { rows } = await sql`
-      SELECT p.id, p.name, p.alter, p.department, p.jahre_auf_xjam, p.bild_vor_name, p.bild_nach_department, p.bild_nach_jahre
+      SELECT p.id, p.name, p.alter, p.department, p.jahre_auf_xjam, p.bild_vor_name, p.bild_nach_department, p.bild_nach_jahre,
+        (
+          SELECT m.text FROM messages m
+          WHERE (m.sender_id = p.id AND m.recipient_id = ${me.id}) OR (m.sender_id = ${me.id} AND m.recipient_id = p.id)
+          ORDER BY m.created_at DESC LIMIT 1
+        ) AS last_message
       FROM swipes mine
       JOIN swipes theirs ON theirs.swiper_id = mine.swiped_id AND theirs.swiped_id = mine.swiper_id
       JOIN profiles p ON p.id = mine.swiped_id

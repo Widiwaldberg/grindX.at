@@ -61,12 +61,18 @@ async function uploadPhoto(file) {
 
 // ---------- Auth state ----------
 let me = JSON.parse(localStorage.getItem("mm_me") || "null");
-const OPENERS = ["Heeey 👋", "Na, schon am Pool gesehen?", "Bananaboat morgen dabei?", "Freu mich aufs Matchen 🎉"];
 
 let queue = [];
 let matches = [];
-let chats = JSON.parse(localStorage.getItem("mm_chats") || "{}");
 let activeChatId = null;
+let chatPollTimer = null;
+
+function stopChatPolling() {
+  if (chatPollTimer) {
+    clearInterval(chatPollTimer);
+    chatPollTimer = null;
+  }
+}
 
 const authView = document.getElementById("auth-view");
 const appView = document.getElementById("app-view");
@@ -92,6 +98,7 @@ function onAuthSuccess(token, profile) {
 }
 
 function logout() {
+  stopChatPolling();
   localStorage.removeItem("mm_token");
   localStorage.removeItem("mm_me");
   me = null;
@@ -178,7 +185,10 @@ function showScreen(name) {
 }
 
 document.querySelectorAll("nav.bottom .item").forEach((btn) => {
-  btn.addEventListener("click", () => showScreen(btn.dataset.screen));
+  btn.addEventListener("click", () => {
+    stopChatPolling();
+    showScreen(btn.dataset.screen);
+  });
 });
 
 // ---------- Card stack / swipe ----------
@@ -315,10 +325,6 @@ function handleMatch(matchProfile) {
   if (!matches.find((m) => m.id === matchProfile.id)) {
     matches.push(matchProfile);
   }
-  if (!chats[matchProfile.id]) {
-    chats[matchProfile.id] = [{ from: "them", text: OPENERS[Math.floor(Math.random() * OPENERS.length)] }];
-    localStorage.setItem("mm_chats", JSON.stringify(chats));
-  }
   renderMatches();
   showMatchPopup(matchProfile);
 }
@@ -386,7 +392,7 @@ function renderMatches() {
       <img class="match-avatar" src="${escapeHtml(m.bild_vor_name)}">
       <div class="match-info">
         <b>${escapeHtml(m.name)}</b>
-        <span>${escapeHtml((chats[m.id] || []).slice(-1)[0]?.text || "Sag Hallo!")}</span>
+        <span>${escapeHtml(m.last_message || "Sag Hallo!")}</span>
       </div>
     `;
     li.addEventListener("click", () => openChat(m.id));
@@ -398,26 +404,38 @@ function renderMatches() {
 const chatMessagesEl = document.getElementById("chat-messages");
 const chatNameEl = document.getElementById("chat-name");
 
-function openChat(id) {
+async function loadMessages(partnerId) {
+  try {
+    const { messages } = await api(`/messages?with=${partnerId}`);
+    renderChatMessages(messages);
+  } catch {}
+}
+
+async function openChat(id) {
   activeChatId = id;
   const match = matches.find((m) => m.id === id);
   chatNameEl.textContent = match ? match.name : "Chat";
-  renderChatMessages();
+  await loadMessages(id);
+  stopChatPolling();
+  chatPollTimer = setInterval(() => loadMessages(id), 3000);
   showScreen("chat");
 }
 
-function renderChatMessages() {
+function renderChatMessages(messages) {
   chatMessagesEl.innerHTML = "";
-  (chats[activeChatId] || []).forEach((msg) => {
+  messages.forEach((msg) => {
     const b = document.createElement("div");
-    b.className = "bubble " + (msg.from === "me" ? "me" : "them");
+    b.className = "bubble " + (msg.sender_id === me.id ? "me" : "them");
     b.textContent = msg.text;
     chatMessagesEl.appendChild(b);
   });
   chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
 }
 
-document.getElementById("chat-back").addEventListener("click", () => showScreen("matches"));
+document.getElementById("chat-back").addEventListener("click", () => {
+  stopChatPolling();
+  showScreen("matches");
+});
 
 function openPartnerProfile(match) {
   document.getElementById("partner-profile-name").textContent = match.name;
@@ -438,17 +456,18 @@ document.getElementById("chat-view-profile").addEventListener("click", () => {
 
 document.getElementById("partner-profile-back").addEventListener("click", () => showScreen("chat"));
 
-document.getElementById("chat-form").addEventListener("submit", (e) => {
+document.getElementById("chat-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const input = document.getElementById("chat-text");
   const text = input.value.trim();
   if (!text || activeChatId == null) return;
-  chats[activeChatId] = chats[activeChatId] || [];
-  chats[activeChatId].push({ from: "me", text });
-  localStorage.setItem("mm_chats", JSON.stringify(chats));
   input.value = "";
-  renderChatMessages();
-  renderMatches();
+  try {
+    await api("/messages", { method: "POST", body: { to: activeChatId, text } });
+    await loadMessages(activeChatId);
+  } catch {
+    input.value = text;
+  }
 });
 
 // ---------- Profile ----------
