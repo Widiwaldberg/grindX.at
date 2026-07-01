@@ -376,13 +376,6 @@ document.getElementById("btn-nope").addEventListener("click", () => {
     if (profile) swipeAway(top, profile, "left");
   }
 });
-document.getElementById("btn-super").addEventListener("click", () => {
-  const top = stackEl.lastElementChild;
-  if (top) {
-    const profile = queue.find((p) => p.id == top.dataset.id);
-    if (profile) swipeAway(top, profile, "right");
-  }
-});
 
 // ---------- Matches ----------
 const matchListEl = document.getElementById("match-list");

@@ -265,7 +265,6 @@ header.app .icons { display: flex; gap: 14px; font-size: 18px; }
   box-shadow: 0 4px 10px rgba(0,0,0,0.15);
 }
 .btn-nope { background: #fff; color: #ff5a5f; border: 2px solid #ffe1e2; }
-.btn-super { background: #fff; color: #4cc9f0; border: 2px solid #d7f3fc; width:44px; height:44px; font-size:18px; }
 .btn-like { background: linear-gradient(135deg,#ff6a88,#ff9a5a); color: #fff; }
 
 /* ---- Matches ---- */
