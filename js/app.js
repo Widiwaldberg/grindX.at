@@ -92,6 +92,17 @@ function showAuth() {
   authView.hidden = false;
 }
 
+async function accountStillExists() {
+  try {
+    const { profile } = await api("/me");
+    me = profile;
+    localStorage.setItem("mm_me", JSON.stringify(profile));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function showApp() {
   authView.hidden = true;
   appView.hidden = false;
@@ -491,8 +502,15 @@ function renderProfile() {
 }
 
 // ---------- Init ----------
-if (localStorage.getItem("mm_token") && me) {
-  showApp();
-} else {
-  showAuth();
+async function init() {
+  if (localStorage.getItem("mm_token") && me) {
+    if (await accountStillExists()) {
+      showApp();
+    } else {
+      logout();
+    }
+  } else {
+    showAuth();
+  }
 }
+init();
