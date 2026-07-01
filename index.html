@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MaturaMatch</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="phone">
+  <div class="notch"></div>
+  <div class="statusbar">
+    <span>9:41</span>
+    <span>●●● 5G 🔋</span>
+  </div>
+
+  <header class="app">
+    <div class="logo">MaturaMatch 🎓❤️</div>
+    <div class="icons">🔔 ⚙️</div>
+  </header>
+
+  <main class="screens">
+
+    <!-- Discover Screen -->
+    <section id="screen-discover" class="screen active">
+      <div class="stack" id="card-stack"></div>
+      <div class="empty-state" id="empty-state" hidden>
+        <p>🎉 Keine weiteren Profile</p>
+        <span>Schau später nochmal vorbei!</span>
+      </div>
+      <div class="actions">
+        <button class="btn-nope" id="btn-nope">✕</button>
+        <button class="btn-super" id="btn-super">★</button>
+        <button class="btn-like" id="btn-like">♥</button>
+      </div>
+    </section>
+
+    <!-- Matches Screen -->
+    <section id="screen-matches" class="screen">
+      <h2 class="screen-title">Deine Matches</h2>
+      <ul class="match-list" id="match-list"></ul>
+      <p class="hint" id="matches-hint">Noch keine Matches – lauf zurück zu "Entdecken" und lik ein paar Leute!</p>
+    </section>
+
+    <!-- Chat Screen -->
+    <section id="screen-chat" class="screen">
+      <div class="chat-header">
+        <button id="chat-back" class="chat-back">←</button>
+        <span id="chat-name">Chat</span>
+      </div>
+      <div class="chat-messages" id="chat-messages"></div>
+      <form class="chat-input" id="chat-form">
+        <input type="text" id="chat-text" placeholder="Nachricht..." autocomplete="off">
+        <button type="submit">➤</button>
+      </form>
+    </section>
+
+    <!-- Programm Screen -->
+    <section id="screen-programm" class="screen">
+      <h2 class="screen-title">Programm</h2>
+      <ul class="programm-list">
+        <li><span class="day">Mo</span><div><b>Anreise & Welcome-Party</b><br>Check-in ab 14 Uhr, Kickoff am Pool</div></li>
+        <li><span class="day">Di</span><div><b>Strandtag</b><br>Volleyball-Turnier, Bananaboat</div></li>
+        <li><span class="day">Mi</span><div><b>Ausflugstag</b><br>Bootstour, Schnorcheln</div></li>
+        <li><span class="day">Do</span><div><b>Freizeit & Pool</b><br>Cocktail-Workshop am Nachmittag</div></li>
+        <li><span class="day">Fr</span><div><b>Abschlussparty</b><br>Rooftop, DJ bis Sonnenaufgang</div></li>
+      </ul>
+    </section>
+
+    <!-- Profile Screen -->
+    <section id="screen-profile" class="screen">
+      <h2 class="screen-title">Mein Profil</h2>
+      <div class="my-profile">
+        <div class="my-avatar">🧑</div>
+        <input type="text" id="my-name" placeholder="Dein Name" value="Du">
+        <textarea id="my-bio" placeholder="Kurze Bio...">Bereit für die beste Woche des Jahres 🌴</textarea>
+        <button id="save-profile" class="save-btn">Speichern</button>
+        <span class="saved-msg" id="saved-msg" hidden>Gespeichert ✓</span>
+      </div>
+    </section>
+
+  </main>
+
+  <nav class="bottom">
+    <button class="item active" data-screen="discover"><span class="ic">🔥</span>Entdecken</button>
+    <button class="item" data-screen="matches"><span class="ic">💬</span>Matches</button>
+    <button class="item" data-screen="programm"><span class="ic">📅</span>Programm</button>
+    <button class="item" data-screen="profile"><span class="ic">👤</span>Profil</button>
+  </nav>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
