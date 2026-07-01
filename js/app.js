@@ -1,3 +1,12 @@
+// ---------- Lock zoom/scroll (feel like a native app) ----------
+document.addEventListener("gesturestart", (e) => e.preventDefault());
+let lastTouchEnd = 0;
+document.addEventListener("touchend", (e) => {
+  const now = Date.now();
+  if (now - lastTouchEnd <= 300) e.preventDefault();
+  lastTouchEnd = now;
+}, { passive: false });
+
 // ---------- Helpers ----------
 function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, (c) => ({
@@ -62,6 +71,7 @@ async function uploadPhoto(file) {
 // ---------- Auth state ----------
 let me = JSON.parse(localStorage.getItem("mm_me") || "null");
 
+const NAV_SCREEN_KEY = "mm_active_screen";
 let queue = [];
 let matches = [];
 let activeChatId = null;
@@ -88,6 +98,9 @@ async function showApp() {
   renderProfile();
   await loadProfiles();
   await loadMatches();
+  const screen = sessionStorage.getItem(NAV_SCREEN_KEY) || "discover";
+  sessionStorage.setItem(NAV_SCREEN_KEY, screen);
+  showScreen(screen);
 }
 
 function onAuthSuccess(token, profile) {
@@ -101,6 +114,7 @@ function logout() {
   stopChatPolling();
   localStorage.removeItem("mm_token");
   localStorage.removeItem("mm_me");
+  sessionStorage.removeItem(NAV_SCREEN_KEY);
   me = null;
   queue = [];
   showAuth();
@@ -186,8 +200,9 @@ function showScreen(name) {
 
 document.querySelectorAll("nav.bottom .item").forEach((btn) => {
   btn.addEventListener("click", () => {
-    stopChatPolling();
-    showScreen(btn.dataset.screen);
+    if (btn.dataset.screen === sessionStorage.getItem(NAV_SCREEN_KEY)) return;
+    sessionStorage.setItem(NAV_SCREEN_KEY, btn.dataset.screen);
+    location.reload();
   });
 });
 
