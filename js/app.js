@@ -210,10 +210,18 @@ function showScreen(name) {
 }
 
 document.querySelectorAll("nav.bottom .item").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    if (btn.dataset.screen === sessionStorage.getItem(NAV_SCREEN_KEY)) return;
-    sessionStorage.setItem(NAV_SCREEN_KEY, btn.dataset.screen);
-    location.reload();
+  btn.addEventListener("click", async () => {
+    const screen = btn.dataset.screen;
+    if (screen === sessionStorage.getItem(NAV_SCREEN_KEY)) return;
+
+    if (!(await accountStillExists())) return logout();
+
+    if (screen === "discover") await loadProfiles();
+    else if (screen === "matches") await loadMatches();
+    else if (screen === "profile") renderProfile();
+
+    sessionStorage.setItem(NAV_SCREEN_KEY, screen);
+    showScreen(screen);
   });
 });
 
