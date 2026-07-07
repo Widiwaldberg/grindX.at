@@ -4,7 +4,11 @@
       "Bash(git checkout *)",
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(python -m http.server 5500)",
+      "Bash(start http://localhost:5500/index.html)",
+      "Bash(git merge *)",
+      "Bash(git stash *)"
     ]
   }
 }

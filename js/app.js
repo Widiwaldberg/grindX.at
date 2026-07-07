@@ -210,18 +210,21 @@ function showScreen(name) {
 }
 
 document.querySelectorAll("nav.bottom .item").forEach((btn) => {
-  btn.addEventListener("click", async () => {
+  btn.addEventListener("click", () => {
     const screen = btn.dataset.screen;
     if (screen === sessionStorage.getItem(NAV_SCREEN_KEY)) return;
 
-    if (!(await accountStillExists())) return logout();
-
-    if (screen === "discover") await loadProfiles();
-    else if (screen === "matches") await loadMatches();
-    else if (screen === "profile") renderProfile();
-
+    // Sofort umschalten – fuehlt sich instant an.
     sessionStorage.setItem(NAV_SCREEN_KEY, screen);
     showScreen(screen);
+
+    // DB-Check + frische Daten im Hintergrund nachziehen.
+    accountStillExists().then((ok) => {
+      if (!ok) return logout();
+      if (screen === "discover") loadProfiles();
+      else if (screen === "matches") loadMatches();
+      else if (screen === "profile") renderProfile();
+    });
   });
 });
 
